@@ -107,19 +107,41 @@ def logicBasedSearch(problem):
     ####################################
     """
 
-####################################
-###                              ###
-###        YOUR CODE THERE       ###
-###                              ###
-####################################
+    open = util.Queue()
+    open.push(startState)
 
-"""
-        ####################################
-        ###                              ###
-        ###      YOUR CODE EVERYWHERE    ###
-        ###                              ###
-        ####################################
-"""
+    checkState(startState, problem)
+
+
+    while True:
+        state = open.pop()
+        successors = problem.getSuccessors(state)
+
+        for successor in successors:
+
+def checkState(state, problem):
+    stench = chemicals = glow = wumpus = capsule = teleporter = True
+
+    if problem.isWumpusClose(state):
+        stench = False
+
+    if problem.isPoisonCapsuleClose(state):
+        chemicals = False
+
+    if problem.isTeleporterClose(state):
+        glow = False
+
+    if problem.isWumpus(state):
+        wumpus = False
+
+    if problem.isPoisonCapsule(state):
+        capsule = False
+
+    if problem.isTeleporter(state):
+        teleporter = False
+
+
+
 
 # Abbreviations
 lbs = logicBasedSearch
