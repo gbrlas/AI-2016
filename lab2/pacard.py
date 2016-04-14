@@ -107,41 +107,69 @@ def logicBasedSearch(problem):
     ####################################
     """
 
-    open = util.Queue()
-    open.push(startState)
+    open = util.PriorityQueue()
+    open.push(startState,1)
+    wumpusDict = dict()
+    capsuleDict = dict()
+    teleporterDict = dict()
+    clauses = set()
 
-    checkState(startState, problem)
+    clauses.add(Clause(Literal('o', startState, False)))
+    clauses.add(Clause(Literal('t', startState, True)))
+    clauses.add(Clause(Literal('p', startState, True)))
+    clauses.add(Clause(Literal('w', startState, True)))
 
-
-    while True:
+    while not open.isEmpty():
         state = open.pop()
-        successors = problem.getSuccessors(state)
+        if state not in visitedStates:
+            visitedStates.append(state)
 
-        for successor in successors:
 
-def checkState(state, problem):
-    stench = chemicals = glow = wumpus = capsule = teleporter = True
 
-    if problem.isWumpusClose(state):
-        stench = False
 
-    if problem.isPoisonCapsuleClose(state):
-        chemicals = False
 
-    if problem.isTeleporterClose(state):
-        glow = False
+def checkState(state, problem, clauses):
+    if not problem.isWumpusClose(state):
+        clauses.add(Clause(set([Literal('w', (state[0]-1, state[1]), True)])))
+        clauses.add(Clause(set([Literal('w', (state[0]+1, state[1]), True)])))
+        clauses.add(Clause(set([Literal('w', (state[0], state[1]-1), True)])))
+        clauses.add(Clause(set([Literal('w', (state[0], state[1]+1), True)])))
+        clauses.add(Clause(Literal('s', state, True)))
 
-    if problem.isWumpus(state):
-        wumpus = False
+    else:
+        clauses.add(Clause(Literal('s', state, False)))
 
-    if problem.isPoisonCapsule(state):
-        capsule = False
+    if not problem.isPoisonCapsuleClose(state):
+        clauses.add(Clause(set([Literal('p', (state[0]-1, state[1]), True)])))
+        clauses.add(Clause(set([Literal('p', (state[0]+1, state[1]), True)])))
+        clauses.add(Clause(set([Literal('p', (state[0], state[1]-1), True)])))
+        clauses.add(Clause(set([Literal('p', (state[0], state[1]+1), True)])))
+        clauses.add(Clause(Literal('c', state, True)))
+    else:
+        clauses.add(Clause(Literal('c', state, False)))
+
+    if not problem.isTeleporterClose(state):
+        clauses.add(Clause(set([Literal('t', (state[0]-1, state[1]), True)])))
+        clauses.add(Clause(set([Literal('t', (state[0]+1, state[1]), True)])))
+        clauses.add(Clause(set([Literal('t', (state[0], state[1]-1), True)])))
+        clauses.add(Clause(set([Literal('t', (state[0], state[1]+1), True)])))
+        clauses.add(Clause(Literal('g', state, True)))
+    else:
+        clauses.add(Clause(Literal('g', state, False)))
 
     if problem.isTeleporter(state):
-        teleporter = False
+        clauses.add(Clause(set([Literal('t', state, False)])))
+    else:
+        clauses.add(Clause(set([Literal('t', state, True)])))
 
+    if problem.isWumpus(state):
+        clauses.add(Clause(set([Literal('w', state, False)])))
+    else:
+        clauses.add(Clause(set([Literal('w', state, True)])))
 
-
-
+    if problem.isPoisonCapsule(state):
+        clauses.add(Clause(set([Literal('p', state, False)])))
+    else:
+        clauses.add(Clause(set([Literal('p', state, True)])))
 # Abbreviations
 lbs = logicBasedSearch
