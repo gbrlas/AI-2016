@@ -112,8 +112,6 @@ def logicBasedSearch(problem):
     state = startState
     knowledge = {}
 
-    knowledge[startState] = Labels.SAFE
-
     while True:
         if state not in visitedStates:
             visitedStates.append(state)
