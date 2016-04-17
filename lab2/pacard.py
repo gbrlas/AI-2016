@@ -110,7 +110,7 @@ def logicBasedSearch(problem):
     safeStates = set()
     openStates = set()
     state = startState
-    knowledge = {}
+    database = {}
 
     while True:
         if state not in visitedStates:
@@ -125,67 +125,62 @@ def logicBasedSearch(problem):
             if successor[0] in visitedStates:
                 continue
 
+            #if Pacard in current state can't sense anything, than the successor is safe
             notWumpus = isNotWumpus(successor[0], state, successors, problem)
             notTeleporter = isNotTeleporter(successor[0], state, successors, problem)
             notPoison = isNotPoison(successor[0], state, successors, problem)
 
             if notWumpus and notTeleporter and notPoison:
-                knowledge[successor[0]] = Labels.SAFE
+                database[successor[0]] = Labels.SAFE
 
-
-            if successor[0] not in knowledge:
-                if isTeleporter(successor[0], state, successors, knowledge, problem):
-                    knowledge[successor[0]] = Labels.TELEPORTER
+            #if we can resolve anything about the successor, add it to the database
+            if successor[0] not in database:
+                if isTeleporter(successor[0], state, successors, database, problem):
+                    database[successor[0]] = Labels.TELEPORTER
                 elif isSafe(successor[0], state, successors, problem):
-                    knowledge[successor[0]] = Labels.SAFE
-                elif isWumpus(successor[0], state, successors, knowledge, problem):
-                    knowledge[successor[0]] = Labels.WUMPUS
-                elif isPoison(successor[0], state, successors, knowledge, problem):
-                    knowledge[successor[0]] = Labels.POISON
+                    database[successor[0]] = Labels.SAFE
+                elif isWumpus(successor[0], state, successors, database, problem):
+                    database[successor[0]] = Labels.WUMPUS
+                elif isPoison(successor[0], state, successors, database, problem):
+                    database[successor[0]] = Labels.POISON
 
-            if knowledge.get(successor[0]) == Labels.SAFE:
+
+            if database.get(successor[0]) == Labels.SAFE:
                 safeStates.add(successor[0])
-
-                if successor[0] not in visitedStates:
-                    safeSuccessors.add(successor[0])
+                safeSuccessors.add(successor[0])
             elif successor[0] not in visitedStates:
                 openStates.add(successor[0])
+
 
         currentBest = 99999
         safeFound = False
 
+        #if one of the successors is a teleporter, we go on that position
+        for successor in successors:
+            if database.get(successor[0]) == Labels.TELEPORTER:
+                currentBest = 0
+                state = successor[0]
+                safeFound = True
+                break
+
+        #if we have a safe successor, we go on that position
         for safe in safeSuccessors:
             if stateWeight(safe) < currentBest:
                 safeFound = True
                 state = safe
                 currentBest = stateWeight(safe)
 
-        for successor in successors:
-            if successor[0] in visitedStates:
-                continue
+        #if we don't have any safe successors, we risk and go to the state with best weight
+        if not safeFound:
+            for successor in successors:
+                if successor[0] in visitedStates:
+                    continue
 
-            weight = stateWeight(successor[0])
+                weight = stateWeight(successor[0])
 
-            if knowledge.get(successor[0]) == Labels.TELEPORTER:
-                currentBest = 0
-                state = successor[0]
-            elif knowledge.get(successor[0]) is None and weight < currentBest and not safeFound:
-                currentBest = weight
-                state = successor[0]
-
-            if currentBest == 99999:
-                for open in openStates:
-                    if open in visitedStates:
-                        continue
-
-                    weight =stateWeight(open)
-
-                    if knowledge.get(successor[0]) is None and weight < currentBest and not safeFound:
-                        currentBest = weight
-                        state = open
-
-        if state in openStates:
-            openStates.remove(state)
+                if database.get(successor[0]) is None and weight < currentBest:
+                    currentBest = weight
+                    state = successor[0]
 
         if state in safeSuccessors:
             safeSuccessors.remove(state)
@@ -193,25 +188,13 @@ def logicBasedSearch(problem):
         if currentBest == 99999:
             break
 
-    print "Current knowledge: ", knowledge
+    print "Current knowledge: ", database
     print "Visited states: ", visitedStates
     print "Open states: ", openStates
     print "Safe states: ", safeStates
     print
     return problem.reconstructPath(visitedStates)
 
-
-def nothingImpliesSafe(state, successors):
-    clauses = set()
-
-    C = Literal(Labels.POISON_CHEMICALS, state, False)
-    S = Literal(Labels.WUMPUS_STENCH, state, False)
-    G = Literal(Labels.TELEPORTER_GLOW, state, False)
-
-    for successor in successors:
-        clauses.add(Clause([C, S, G, Literal(Labels.SAFE, successor[0], False)]))
-
-    return clauses
 
 def chemicalsImpliesPoison(state, successors):
     literals = set()
@@ -242,37 +225,8 @@ def glowImpliesTeleporter(state, successors):
 
     return set([Clause(literals)])
 
-def noStenchImpliesNoWumpus(state, successors):
-    clauses = set()
 
-    S = Literal(Labels.WUMPUS_STENCH, state, False)
-
-    for successor in successors:
-        clauses.add(Clause([S, Literal(Labels.WUMPUS, successor[0], True)]))
-
-    return clauses
-
-def noPoisonChemicalsImpliesNoPoison(state, successors):
-    clauses = set()
-
-    C = Literal(Labels.POISON_CHEMICALS, state, False)
-
-    for successor in successors:
-        clauses.add(Clause([C, Literal(Labels.POISON, successor[0], True)]))
-
-    return clauses
-
-def noGlowImpliesNoTeleporter(state, successors):
-    clauses = set()
-
-    G = Literal(Labels.TELEPORTER_GLOW, state, False)
-
-    for successor in successors:
-        clauses.add(Clause([G, Literal(Labels.TELEPORTER, successor[0], True)]))
-
-    return clauses
-
-def isTeleporter(testSuccessor, state, successors, knowledge, problem):
+def isTeleporter(testSuccessor, state, successors, database, problem):
     clauses = set()
 
 
@@ -280,7 +234,7 @@ def isTeleporter(testSuccessor, state, successors, knowledge, problem):
         if successor[0] == testSuccessor:
             continue
 
-        test = knowledge.get(successor[0], Labels.TELEPORTER) is not Labels.TELEPORTER
+        test = database.get(successor[0], Labels.TELEPORTER) is not Labels.TELEPORTER
         clauses.add(Clause(Literal(Labels.TELEPORTER, successor[0], test)))
 
     clauses.add(Clause(Literal(Labels.TELEPORTER_GLOW, state, not problem.isTeleporterClose(state))))
@@ -288,14 +242,14 @@ def isTeleporter(testSuccessor, state, successors, knowledge, problem):
 
     return resolution(clauses | glowImpliesTeleporter(state, successors), goal)
 
-def isWumpus(testSuccessor, state, successors, knowledge, problem):
+def isWumpus(testSuccessor, state, successors, database, problem):
     clauses = set()
 
     for successor in successors:
         if successor[0] == testSuccessor:
             continue
 
-        test = knowledge.get(successor[0], Labels.WUMPUS) is not Labels.WUMPUS
+        test = database.get(successor[0], Labels.WUMPUS) is not Labels.WUMPUS
         clauses.add(Clause(Literal(Labels.WUMPUS, successor[0], test)))
 
     clauses.add(Clause(Literal(Labels.WUMPUS_STENCH, state, not problem.isWumpusClose(state))))
@@ -303,14 +257,14 @@ def isWumpus(testSuccessor, state, successors, knowledge, problem):
 
     return resolution(clauses | stenchImpliesWumpus(state, successors), goal)
 
-def isPoison(testSuccessor, state, successors, knowledge, problem):
+def isPoison(testSuccessor, state, successors, database, problem):
     clauses = set()
 
     for successor in successors:
         if successor[0] is testSuccessor:
             continue
 
-        test = knowledge.get(successor[0], Labels.POISON) is not Labels.POISON
+        test = database.get(successor[0], Labels.POISON) is not Labels.POISON
         clauses.add(Clause(Literal(Labels.POISON, successor[0], test)))
 
     clauses.add(Clause(Literal(Labels.POISON_CHEMICALS, state, not problem.isPoisonCapsuleClose(state))))
@@ -318,43 +272,61 @@ def isPoison(testSuccessor, state, successors, knowledge, problem):
 
     return resolution(clauses | chemicalsImpliesPoison(state, successors), goal)
 
-def isSafe(successor, state, successors, problem):
+def isSafe(test, state, successors, problem):
     clauses = set()
 
     clauses.add(Clause(Literal(Labels.POISON_CHEMICALS, state, not problem.isPoisonCapsuleClose(state))))
     clauses.add(Clause(Literal(Labels.WUMPUS_STENCH, state, not problem.isWumpusClose(state))))
     clauses.add(Clause(Literal(Labels.TELEPORTER_GLOW, state, not problem.isTeleporterClose(state))))
+    goal = Clause(Literal(Labels.SAFE, test, False))
 
-    goal = Clause(Literal(Labels.SAFE, successor, False))
+    C = Literal(Labels.POISON_CHEMICALS, state, True)
+    S = Literal(Labels.WUMPUS_STENCH, state, True)
+    G = Literal(Labels.TELEPORTER_GLOW, state, True)
 
-    return  resolution(clauses | nothingImpliesSafe(state, successors), goal)
+    for successor in successors:
+        clauses.add(Clause([C, S, G, Literal(Labels.SAFE, successor[0], False)]))
 
-def isNotWumpus(successor, state, successors, problem):
+    return  resolution(clauses, goal)
+
+def isNotWumpus(test, state, successors, problem):
     clauses = set()
 
     clauses.add(Clause(Literal(Labels.WUMPUS_STENCH, state, not problem.isWumpusClose(state))))
+    goal = Clause(Literal(Labels.WUMPUS, test, True))
 
-    goal = Clause(Literal(Labels.WUMPUS, successor, True))
+    S = Literal(Labels.WUMPUS_STENCH, state, False)
 
-    return resolution(clauses | noStenchImpliesNoWumpus(state, successors), goal)
+    for successor in successors:
+        clauses.add(Clause([S, Literal(Labels.WUMPUS, successor[0], True)]))
 
-def isNotPoison(successor, state, successors, problem):
+    return resolution(clauses, goal)
+
+def isNotPoison(test, state, successors, problem):
     clauses = set()
 
     clauses.add(Clause(Literal(Labels.POISON_CHEMICALS, state, not problem.isPoisonCapsuleClose(state))))
+    goal = Clause(Literal(Labels.POISON, test, True))
 
-    goal = Clause(Literal(Labels.POISON, successor, True))
+    C = Literal(Labels.POISON_CHEMICALS, state, False)
 
-    return resolution(clauses | noPoisonChemicalsImpliesNoPoison(state, successors), goal)
+    for successor in successors:
+        clauses.add(Clause([C, Literal(Labels.POISON, successor[0], True)]))
 
-def isNotTeleporter(successor, state, successors, problem):
+    return resolution(clauses, goal)
+
+def isNotTeleporter(test, state, successors, problem):
     clauses = set()
 
     clauses.add(Clause(Literal(Labels.TELEPORTER_GLOW, state, not problem.isTeleporterClose(state))))
+    goal = Clause(Literal(Labels.TELEPORTER, test, True))
 
-    goal = Clause(Literal(Labels.TELEPORTER, successor, True))
+    G = Literal(Labels.TELEPORTER_GLOW, state, False)
 
-    return resolution(clauses | noGlowImpliesNoTeleporter(state, successors), goal)
+    for successor in successors:
+        clauses.add(Clause([G, Literal(Labels.TELEPORTER, successor[0], True)]))
+
+    return resolution(clauses, goal)
 
 
 # Abbreviations
