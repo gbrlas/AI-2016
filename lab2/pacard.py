@@ -111,6 +111,7 @@ def logicBasedSearch(problem):
     openStates = set()
     state = startState
     database = {}
+    teleportDatabase = {}
 
     MAXWEIGHT= 99999
 
@@ -121,7 +122,23 @@ def logicBasedSearch(problem):
         if problem.isGoalState(state):
             break
 
+
+
         successors = problem.getSuccessors(state)
+
+        found = False
+        if problem.isTeleporterClose(state):
+            for successor in successors:
+                if successor[0] in teleportDatabase:
+                    state = successor[0]
+                    found = True
+                    break
+                else:
+                    teleportDatabase[successor[0]] = 1
+
+        if found:
+            continue
+
 
         for successor in successors:
             if successor[0] in visitedStates:
@@ -199,6 +216,11 @@ def logicBasedSearch(problem):
     print
     return problem.reconstructPath(visitedStates)
 
+
+
+################################
+#functions for resolution logic#
+################################
 
 def chemicalsImpliesPoison(state, successors):
     literals = set()
