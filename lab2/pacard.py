@@ -112,6 +112,8 @@ def logicBasedSearch(problem):
     state = startState
     database = {}
 
+    MAXWEIGHT= 99999
+
     while True:
         if state not in visitedStates:
             visitedStates.append(state)
@@ -152,10 +154,10 @@ def logicBasedSearch(problem):
                 openStates.add(successor[0])
 
 
-        currentBest = 99999
+        currentBest = MAXWEIGHT
         safeFound = False
 
-        #if one of the successors is a teleporter, we go on that position
+        # 1. if one of the successors is a teleporter, we go on that position
         for successor in successors:
             if database.get(successor[0]) == Labels.TELEPORTER:
                 currentBest = 0
@@ -163,14 +165,14 @@ def logicBasedSearch(problem):
                 safeFound = True
                 break
 
-        #if we have a safe successor, we go on that position
+        # 2. if we have a safe successor, we go on that position
         for safe in safeSuccessors:
             if stateWeight(safe) < currentBest:
                 safeFound = True
                 state = safe
                 currentBest = stateWeight(safe)
 
-        #if we don't have any safe successors, we risk and go to the state with best weight
+        # 3. if we don't have any safe successors, we risk and go to the state with best weight
         if not safeFound:
             for successor in successors:
                 if successor[0] in visitedStates:
@@ -182,11 +184,13 @@ def logicBasedSearch(problem):
                     currentBest = weight
                     state = successor[0]
 
+        # 4. we can't move anywhere
+        if currentBest == MAXWEIGHT:
+            break
+
         if state in safeSuccessors:
             safeSuccessors.remove(state)
 
-        if currentBest == 99999:
-            break
 
     print "Current knowledge: ", database
     print "Visited states: ", visitedStates
@@ -206,6 +210,7 @@ def chemicalsImpliesPoison(state, successors):
 
     return set([Clause(literals)])
 
+
 def stenchImpliesWumpus(state, successors):
     literals = set()
 
@@ -215,6 +220,7 @@ def stenchImpliesWumpus(state, successors):
         literals.add(Literal(Labels.WUMPUS, successor[0], False))
 
     return set([Clause(literals), Clause(Literal(Labels.WUMPUS, (-1, -1), True))])
+
 
 def glowImpliesTeleporter(state, successors):
     literals = set()
@@ -229,7 +235,7 @@ def glowImpliesTeleporter(state, successors):
 def isTeleporter(testSuccessor, state, successors, database, problem):
     clauses = set()
 
-
+    #create clauses for all successors except the tested one, that one is the goal
     for successor in successors:
         if successor[0] == testSuccessor:
             continue
@@ -242,9 +248,11 @@ def isTeleporter(testSuccessor, state, successors, database, problem):
 
     return resolution(clauses | glowImpliesTeleporter(state, successors), goal)
 
+
 def isWumpus(testSuccessor, state, successors, database, problem):
     clauses = set()
 
+    #create clauses for all successors except the tested one, that one is the goal
     for successor in successors:
         if successor[0] == testSuccessor:
             continue
@@ -257,9 +265,11 @@ def isWumpus(testSuccessor, state, successors, database, problem):
 
     return resolution(clauses | stenchImpliesWumpus(state, successors), goal)
 
+
 def isPoison(testSuccessor, state, successors, database, problem):
     clauses = set()
 
+    #create clauses for all successors except the tested one, that one is the goal
     for successor in successors:
         if successor[0] is testSuccessor:
             continue
@@ -272,14 +282,17 @@ def isPoison(testSuccessor, state, successors, database, problem):
 
     return resolution(clauses | chemicalsImpliesPoison(state, successors), goal)
 
+
 def isSafe(test, state, successors, problem):
     clauses = set()
 
+    #what we know
     clauses.add(Clause(Literal(Labels.POISON_CHEMICALS, state, not problem.isPoisonCapsuleClose(state))))
     clauses.add(Clause(Literal(Labels.WUMPUS_STENCH, state, not problem.isWumpusClose(state))))
     clauses.add(Clause(Literal(Labels.TELEPORTER_GLOW, state, not problem.isTeleporterClose(state))))
     goal = Clause(Literal(Labels.SAFE, test, False))
 
+    #literals and clauses
     C = Literal(Labels.POISON_CHEMICALS, state, True)
     S = Literal(Labels.WUMPUS_STENCH, state, True)
     G = Literal(Labels.TELEPORTER_GLOW, state, True)
