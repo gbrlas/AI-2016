@@ -230,6 +230,7 @@ def isTeleporter(testSuccessor, state, successors, database, problem):
 
     literals.add(Literal(Labels.TELEPORTER_GLOW, state, True))
 
+    # notG v T x4
     for successor in successors:
         literals.add(Literal(Labels.TELEPORTER, successor[0], False))
 
@@ -255,6 +256,7 @@ def isWumpus(testSuccessor, state, successors, database, problem):
 
     literals.add(Literal(Labels.WUMPUS_STENCH, state, True))
 
+    # notS v W x4
     for successor in successors:
         literals.add(Literal(Labels.WUMPUS, successor[0], False))
 
@@ -280,6 +282,7 @@ def isPoison(testSuccessor, state, successors, database, problem):
 
     literals.add(Literal(Labels.POISON_CHEMICALS, state, True))
 
+    # notC v P x4
     for successor in successors:
         literals.add(Literal(Labels.POISON, successor[0], False))
 
@@ -309,10 +312,14 @@ def isSafe(test, state, successors, problem):
     goal = Clause(Literal(Labels.SAFE, test, False))
 
     #literals and clauses
-    C = Literal(Labels.POISON_CHEMICALS, state, True)
-    S = Literal(Labels.WUMPUS_STENCH, state, True)
-    G = Literal(Labels.TELEPORTER_GLOW, state, True)
+    # notC
+    C = Literal(Labels.POISON_CHEMICALS, state, False)
+    # notS
+    S = Literal(Labels.WUMPUS_STENCH, state, False)
+    # notG
+    G = Literal(Labels.TELEPORTER_GLOW, state, False)
 
+    # C v S v G v 0 x4
     for successor in successors:
         clauses.add(Clause([C, S, G, Literal(Labels.SAFE, successor[0], False)]))
 
@@ -321,39 +328,48 @@ def isSafe(test, state, successors, problem):
 def isNotWumpus(test, state, successors, problem):
     clauses = set()
 
+    S = Literal(Labels.WUMPUS_STENCH, state, False)
+
+    # S v notW x4
+    for successor in successors:
+        clauses.add(Clause([S, Literal(Labels.WUMPUS, successor[0], True)]))
+
+
+    # notS
     clauses.add(Clause(Literal(Labels.WUMPUS_STENCH, state, not problem.isWumpusClose(state))))
     goal = Clause(Literal(Labels.WUMPUS, test, True))
 
-    S = Literal(Labels.WUMPUS_STENCH, state, False)
-
-    for successor in successors:
-        clauses.add(Clause([S, Literal(Labels.WUMPUS, successor[0], True)]))
 
     return resolution(clauses, goal)
 
 def isNotPoison(test, state, successors, problem):
     clauses = set()
 
-    clauses.add(Clause(Literal(Labels.POISON_CHEMICALS, state, not problem.isPoisonCapsuleClose(state))))
-    goal = Clause(Literal(Labels.POISON, test, True))
-
     C = Literal(Labels.POISON_CHEMICALS, state, False)
 
+    # C v notP x4
     for successor in successors:
         clauses.add(Clause([C, Literal(Labels.POISON, successor[0], True)]))
+
+
+    # notC
+    clauses.add(Clause(Literal(Labels.POISON_CHEMICALS, state, not problem.isPoisonCapsuleClose(state))))
+    goal = Clause(Literal(Labels.POISON, test, True))
 
     return resolution(clauses, goal)
 
 def isNotTeleporter(test, state, successors, problem):
     clauses = set()
 
-    clauses.add(Clause(Literal(Labels.TELEPORTER_GLOW, state, not problem.isTeleporterClose(state))))
-    goal = Clause(Literal(Labels.TELEPORTER, test, True))
-
     G = Literal(Labels.TELEPORTER_GLOW, state, False)
 
+    # G v notT x4
     for successor in successors:
         clauses.add(Clause([G, Literal(Labels.TELEPORTER, successor[0], True)]))
+
+    # notG
+    clauses.add(Clause(Literal(Labels.TELEPORTER_GLOW, state, not problem.isTeleporterClose(state))))
+    goal = Clause(Literal(Labels.TELEPORTER, test, True))
 
     return resolution(clauses, goal)
 
