@@ -106,12 +106,15 @@ def logicBasedSearch(problem):
     ###                              ###
     ####################################
 
-    safeSuccessors = set()
+    #for final print, not used
     safeStates = set()
+
+    safeSuccessors = set()
     openStates = set()
     state = startState
     database = {}
     teleportDatabase = {}
+    wumpusDatabase = {}
 
     MAXWEIGHT= 99999
 
@@ -139,6 +142,13 @@ def logicBasedSearch(problem):
 
         if found:
             continue
+
+        if problem.isWumpusClose(state):
+            for successor in successors:
+                if successor[0] in wumpusDatabase:
+                    database[state] = Labels.WUMPUS
+                else:
+                    wumpusDatabase[successor[0]] = 1
 
 
         for successor in successors:
@@ -191,7 +201,7 @@ def logicBasedSearch(problem):
                     state = safe
                     currentBest = stateWeight(safe)
 
-        # 3. if we don't have any safe successors, we risk and go to the state with best weight
+        # 3. if we don't have any safe successors, we risk and go to the successor with the best weight value
         if not safeFound:
             for successor in successors:
                 if successor[0] in visitedStates:
@@ -203,7 +213,7 @@ def logicBasedSearch(problem):
                     currentBest = weight
                     state = successor[0]
 
-        # 4. we can't move anywhere
+        # 4. we can't move anywhere, end of program
         if currentBest == MAXWEIGHT:
             break
 
@@ -312,11 +322,8 @@ def isSafe(test, state, successors, problem):
     goal = Clause(Literal(Labels.SAFE, test, False))
 
     #literals and clauses
-    # notC
     C = Literal(Labels.POISON_CHEMICALS, state, False)
-    # notS
     S = Literal(Labels.WUMPUS_STENCH, state, False)
-    # notG
     G = Literal(Labels.TELEPORTER_GLOW, state, False)
 
     # C v S v G v 0 x4
