@@ -110,7 +110,6 @@ def logicBasedSearch(problem):
     safeStates = set()
 
     safeSuccessors = set()
-    openStates = set()
     state = startState
     database = {}
     teleportDatabase = {}
@@ -125,9 +124,8 @@ def logicBasedSearch(problem):
         if problem.isGoalState(state):
             break
 
-
-
         successors = problem.getSuccessors(state)
+
 
         found = False
         if problem.isTeleporterClose(state):
@@ -135,7 +133,7 @@ def logicBasedSearch(problem):
                 if successor[0] in teleportDatabase:
                     state = successor[0]
                     found = True
-                    database[state] = Labels.TELEPORTER
+                    database[successor[0]] = Labels.TELEPORTER
                     break
                 else:
                     teleportDatabase[successor[0]] = 1
@@ -146,14 +144,18 @@ def logicBasedSearch(problem):
         if problem.isWumpusClose(state):
             for successor in successors:
                 if successor[0] in wumpusDatabase:
-                    database[state] = Labels.WUMPUS
+                    wumpusDatabase[successor[0]] += 1
                 else:
                     wumpusDatabase[successor[0]] = 1
+
+                if wumpusDatabase[successor[0]] >= 3:
+                    database[successor[0]] = Labels.WUMPUS
 
 
         for successor in successors:
             if successor[0] in visitedStates:
                 continue
+
 
             #if Pacard in current state can't sense anything, than the successor is safe
             notWumpus = isNotWumpus(successor[0], state, successors, problem)
@@ -162,6 +164,9 @@ def logicBasedSearch(problem):
 
             if notWumpus and notTeleporter and notPoison:
                 database[successor[0]] = Labels.SAFE
+                safeSuccessors.add(successor[0])
+                continue
+
 
             #if we can resolve anything about the successor, add it to the database
             if successor[0] not in database:
@@ -176,10 +181,7 @@ def logicBasedSearch(problem):
 
 
             if database.get(successor[0]) == Labels.SAFE:
-                safeStates.add(successor[0])
                 safeSuccessors.add(successor[0])
-            elif successor[0] not in visitedStates:
-                openStates.add(successor[0])
 
 
         currentBest = MAXWEIGHT
@@ -222,9 +224,7 @@ def logicBasedSearch(problem):
 
 
     print "Current knowledge: ", database
-    print "Visited states: ", visitedStates
-    print "Open states: ", openStates
-    print "Safe states: ", safeStates
+    print "Path: ", visitedStates
     print
     return problem.reconstructPath(visitedStates)
 
@@ -298,7 +298,7 @@ def isPoison(testSuccessor, state, successors, database, problem):
 
     clauses.add(Clause(literals))
 
-    #create clauses for all successors except the tested one, that one is the goal
+    #create clauses for all successors except the tested one, that one is the goal we have to prove
     for successor in successors:
         if successor[0] is testSuccessor:
             continue
@@ -326,7 +326,7 @@ def isSafe(test, state, successors, problem):
     S = Literal(Labels.WUMPUS_STENCH, state, False)
     G = Literal(Labels.TELEPORTER_GLOW, state, False)
 
-    # C v S v G v 0 x4
+    # C v S v G v O x4
     for successor in successors:
         clauses.add(Clause([C, S, G, Literal(Labels.SAFE, successor[0], False)]))
 
