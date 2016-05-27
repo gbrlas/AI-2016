@@ -42,9 +42,33 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.discount = discount
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
+        self.actions = dict()
+        states = self.mdp.getStates()
+
+        for state in states:
+            self.actions[state] = 'north'
 
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
+        for i in range (self.iterations):
+            temp = util.Counter()
+            tempActions = self.actions.copy()
+
+            for state in states:
+                max = -9999999
+
+                for action in self.mdp.getPossibleActions(state):
+                    qValue = self.computeQValueFromValues(state, action)
+
+                    if (qValue > max):
+                        max = qValue
+                        temp[state] = qValue
+                        tempActions[state] = action
+
+            self.values = temp
+            print self.values
+            self.actions = tempActions
+
 
 
     def getValue(self, state):
@@ -60,7 +84,14 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        transition = self.mdp.getTransitionStatesAndProbs(state, action)
+        sum = 0
+
+        for succ, probability in transition:
+            reward = self.mdp.getReward(state, action, succ)
+            sum += probability * (reward + self.discount * self.getValue(succ))
+
+        return sum
 
     def computeActionFromValues(self, state):
         """
@@ -72,7 +103,12 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):
+            return None
+
+        return self.actions[state]
+
+
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)

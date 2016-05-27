@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -43,6 +43,7 @@ class QLearningAgent(ReinforcementAgent):
         ReinforcementAgent.__init__(self, **args)
 
         "*** YOUR CODE HERE ***"
+        self.qValues = util.Counter()
 
     def getQValue(self, state, action):
         """
@@ -51,7 +52,7 @@ class QLearningAgent(ReinforcementAgent):
           or the Q node value otherwise
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.qValues[(state, action)]
 
 
     def computeValueFromQValues(self, state):
@@ -62,7 +63,16 @@ class QLearningAgent(ReinforcementAgent):
           terminal state, you should return a value of 0.0.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        bestQVal = -999999
+
+        for action in self.getLegalActions(state):
+          if self.getQValue(state,action) > bestQVal:
+            bestQVal = self.getQValue(state,action)
+
+        if bestQVal == -999999:
+          return 0.0
+
+        return bestQVal
 
     def computeActionFromQValues(self, state):
         """
@@ -71,7 +81,20 @@ class QLearningAgent(ReinforcementAgent):
           you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        bestActions = []
+        bestValue = -999999
+
+        for action in self.getLegalActions(state):
+          if self.getQValue(state,action) > bestValue:
+            bestValue = self.getQValue(state,action)
+            bestActions = [action]
+          elif self.getQValue(state,action) == bestValue:
+            bestActions.append(action)
+
+        if len(bestActions) != 0:
+          return random.choice(bestActions)
+
+        return None
 
     def getAction(self, state):
         """
@@ -86,11 +109,14 @@ class QLearningAgent(ReinforcementAgent):
         """
         # Pick Action
         legalActions = self.getLegalActions(state)
-        action = None
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if len(legalActions) == 0:
+            return None
 
-        return action
+        if util.flipCoin(self.epsilon):
+            return random.choice(legalActions)
+        else:
+            return self.getPolicy(state)
 
     def update(self, state, action, nextState, reward):
         """
@@ -102,7 +128,18 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        values = list()
+        for action1 in self.getLegalActions(nextState):
+            values.append(self.qValues[(nextState, action1)])
+
+        if (len(values) == 0):
+            maxValue = 0
+        else:
+            maxValue = max(values)
+
+        qValue = self.qValues[(state, action)] + self.alpha * (reward + self.discount * maxValue - self.qValues[(state, action)])
+        self.qValues[(state, action)] = qValue
+
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
@@ -144,43 +181,47 @@ class PacmanQAgent(QLearningAgent):
 
 
 class ApproximateQAgent(PacmanQAgent):
-    """
-       ApproximateQLearningAgent
+  """
+     ApproximateQLearningAgent
+     You should only have to overwrite getQValue
+     and update.  All other QLearningAgent functions
+     should work as is.
+  """
+  def __init__(self, extractor='IdentityExtractor', **args):
+    self.featExtractor = util.lookup(extractor, globals())()
+    self.weights = util.Counter()
+    PacmanQAgent.__init__(self, **args)
 
-       You should only have to overwrite getQValue
-       and update.  All other QLearningAgent functions
-       should work as is.
-    """
-    def __init__(self, extractor='IdentityExtractor', **args):
-        self.featExtractor = util.lookup(extractor, globals())()
-        PacmanQAgent.__init__(self, **args)
-        self.weights = util.Counter()
-
-    def getWeights(self):
+  def getWeights(self):
         return self.weights
 
-    def getQValue(self, state, action):
-        """
-          Should return Q(state,action) = w * featureVector
-          where * is the dotProduct operator
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+  def getQValue(self, state, action):
+    """
+      Should return Q(state,action) = w * featureVector
+      where * is the dotProduct operator
+    """
+    qValue = 0
+    for key in self.featExtractor.getFeatures(state, action).keys():
+        qValue += self.weights[key] * self.featExtractor.getFeatures(state, action)[key]
 
-    def update(self, state, action, nextState, reward):
-        """
-           Should update your weights based on transition
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+    return qValue
 
-    def final(self, state):
-        "Called at the end of each game."
-        # call the super-class final method
-        PacmanQAgent.final(self, state)
+  def update(self, state, action, nextState, reward):
+    """
+       Should update your weights based on transition
+    """
+    difference = reward + (self.discount * self.getValue(nextState)) - self.getQValue(state, action)
+    for key in self.featExtractor.getFeatures(state, action).keys():
+        self.weights[key] = self.weights[key] + self.alpha * difference * self.featExtractor.getFeatures(state, action)[key]
 
-        # did we finish training?
-        if self.episodesSoFar == self.numTraining:
-            # you might want to print your weights here for debugging
-            "*** YOUR CODE HERE ***"
-            pass
+  def final(self, state):
+    "Called at the end of each game."
+    # call the super-class final method
+    PacmanQAgent.final(self, state)
+
+    # did we finish training?
+    if self.episodesSoFar == self.numTraining:
+      # you might want to print your weights here for debugging
+      for weight in self.weights.keys():
+          print "Weight: %s; Value %2.2f" % (str(weight), float(self.weights[weight]))
+      pass
