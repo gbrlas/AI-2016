@@ -66,7 +66,7 @@ class ValueIterationAgent(ValueEstimationAgent):
                         tempActions[state] = action
 
             self.values = temp
-            print self.values
+            #print self.values
             self.actions = tempActions
 
 
