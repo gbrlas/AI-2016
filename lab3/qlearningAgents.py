@@ -133,11 +133,11 @@ class QLearningAgent(ReinforcementAgent):
             values.append(self.qValues[(nextState, action1)])
 
         if (len(values) == 0):
-            maxValue = 0
+            maxNextQValue = 0
         else:
-            maxValue = max(values)
+            maxNextQValue = max(values)
 
-        qValue = self.qValues[(state, action)] + self.alpha * (reward + self.discount * maxValue - self.qValues[(state, action)])
+        qValue = self.qValues[(state, action)] + self.alpha * (reward + self.discount * maxNextQValue - self.qValues[(state, action)])
         self.qValues[(state, action)] = qValue
 
 
@@ -200,6 +200,7 @@ class ApproximateQAgent(PacmanQAgent):
       Should return Q(state,action) = w * featureVector
       where * is the dotProduct operator
     """
+    "*** YOUR CODE HERE ***"
     qValue = 0
     for key in self.featExtractor.getFeatures(state, action).keys():
         qValue += self.weights[key] * self.featExtractor.getFeatures(state, action)[key]
@@ -210,17 +211,28 @@ class ApproximateQAgent(PacmanQAgent):
     """
        Should update your weights based on transition
     """
-    difference = reward + (self.discount * self.getValue(nextState)) - self.getQValue(state, action)
+    "*** YOUR CODE HERE ***"
+    bestQVal = -999999
+
+    for action1 in self.getLegalActions(nextState):
+      if self.getQValue(nextState,action1) > bestQVal:
+        bestQVal = self.getQValue(nextState,action1)
+
+    if bestQVal == -999999:
+      bestQVal = 0
+
+    difference = reward + (self.discount * bestQVal) - self.getQValue(state, action)
+
     for key in self.featExtractor.getFeatures(state, action).keys():
         self.weights[key] = self.weights[key] + self.alpha * difference * self.featExtractor.getFeatures(state, action)[key]
 
   def final(self, state):
     "Called at the end of each game."
-    # call the super-class final method    PacmanQAgent.final(self, state)
+    PacmanQAgent.final(self, state)
 
     # did we finish training?
     if self.episodesSoFar == self.numTraining:
       # you might want to print your weights here for debugging
+      "*** YOUR CODE HERE ***"
       for weight in self.weights.keys():
           print "Weight: %s; Value %2.2f" % (str(weight), float(self.weights[weight]))
-      pass

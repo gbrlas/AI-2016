@@ -46,7 +46,10 @@ class ValueIterationAgent(ValueEstimationAgent):
         states = self.mdp.getStates()
 
         for state in states:
-            self.actions[state] = 'north'
+            if self.mdp.isTerminal(state):
+                self.actions[state] = None
+            else:
+                self.actions[state] = 'north'
 
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
@@ -87,9 +90,9 @@ class ValueIterationAgent(ValueEstimationAgent):
         transition = self.mdp.getTransitionStatesAndProbs(state, action)
         sum = 0
 
-        for succ, probability in transition:
-            reward = self.mdp.getReward(state, action, succ)
-            sum += probability * (reward + self.discount * self.getValue(succ))
+        for nextState, probability in transition:
+            reward = self.mdp.getReward(state, action, nextState)
+            sum += probability * (reward + self.discount * self.getValue(nextState))
 
         return sum
 
@@ -103,9 +106,6 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        if self.mdp.isTerminal(state):
-            return None
-
         return self.actions[state]
 
 
