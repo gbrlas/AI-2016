@@ -1,6 +1,7 @@
-import numpy as np 
+import numpy as np
+import random
 
-class GeneticAlgorithm(object): 
+class GeneticAlgorithm(object):
 	"""
 		Implement a simple generationl genetic algorithm as described in the instructions
 	"""
@@ -8,12 +9,12 @@ class GeneticAlgorithm(object):
 	def __init__(	self, chromosomeShape,
 					errorFunction,
 					elitism = 1,
-					populationSize = 25, 
-					mutationProbability  = .1, 
+					populationSize = 25,
+					mutationProbability  = .1,
 					mutationScale = .5,
-					numIterations = 10000, 
+					numIterations = 10000,
 					errorTreshold = 1e-6
-					): 
+					):
 
 		self.populationSize = populationSize # size of the population of units
 		self.p = mutationProbability # probability of mutation
@@ -37,31 +38,57 @@ class GeneticAlgorithm(object):
 
 		# sort descending according to fitness (larger is better)
 		self.population = sorted(self.population, key=lambda t: -t[1])
-	
-	def step(self):	
+
+	def step(self):
 		"""
 			Run one iteration of the genetic algorithm. In a single iteration,
 			you should create a whole new population by first keeping the best
 			units as defined by elitism, then iteratively select parents from
 			the current population, apply crossover and then mutation.
 
-			The step function should return, as a tuple: 
-				
-			* boolean value indicating should the iteration stop (True if 
-				the learning process is finished, False othwerise)
-			* an integer representing the current iteration of the 
+			The step function should return, as a tuple:
+
+			* boolean value indicating should the iteration stop (True if
+				the learning process is finished, False otherwise)
+			* an integer representing the current iteration of the
 				algorithm
 			* the weights of the best unit in the current iteration
 
 		"""
-		
-		self.i += 1 
+
+		self.i += 1
 
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
 
-		pass
+		stop = False
+
+		if self.numIter <= self.i:
+			stop = True
+
+		newPopulation = list()
+		bestN = self.bestN(self.keep)
+
+		for best in bestN:
+			newPopulation.append(best)
+
+		while len(newPopulation) < self.populationSize:
+			p1, p2 = self.selectParents()
+			d1 = self.crossover(p1,p2)
+			d2 = self.crossover(p1,p2)
+
+			d1 = self.mutate(d1)
+			d2 = self.mutate(d2)
+
+			newPopulation.append((d1,self.calculateFitness(d1)))
+			newPopulation.append((d2,self.calculateFitness(d2)))
+
+		self.population = sorted(newPopulation,key = lambda t: -t[1]) #sort descending by fitness
+
+		best_weights = self.population[0][0] #since it's sorted, the best element with best fitness
+
+		return (stop,self.i,best_weights)
 
 
 	def calculateFitness(self, chromosome):
@@ -74,16 +101,19 @@ class GeneticAlgorithm(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass
+		return 1.0 / chromosomeError
 
-	def bestN(self, n):		
+	def bestN(self, n):
 		"""
 			Return the best n units from the population
 		"""
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass
+
+		best = [x for x in self.population[0:n]]
+
+		return best
 
 	def best(self):
 		"""
@@ -92,28 +122,44 @@ class GeneticAlgorithm(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass 
+		return self.population[0][0]
+
 
 	def selectParents(self):
 		"""
-			Select two parents from the population with probability of 
+			Select two parents from the population with probability of
 			selection proportional to the fitness of the units in the
-			population		
+			population
 		"""
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass
+		parents = list()
+		total_fitness = 0
 
-	def crossover(self, p1, p2): 
+		for unit in self.population:
+			total_fitness += unit[1]
+
+		while len(parents)<2:
+			for unit in self.population:
+				if len(parents)>=2:
+					break
+
+				if random.random() < unit[1] / total_fitness:
+					parents.append(unit)
+
+		return parents[0][0],parents[1][0]
+
+	def crossover(self, p1, p2):
 		"""
-			Given two parent units p1 and p2, do a simple crossover by 
+			Given two parent units p1 and p2, do a simple crossover by
 			averaging their values in order to create a new child unit
 		"""
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass
+
+		return np.add(p1,p2) / 2
 
 	def mutate(self, chromosome):
 		"""
@@ -124,6 +170,12 @@ class GeneticAlgorithm(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass 
+
+		#width of chromosome array
+		for i in range(chromosome.shape[0]) :
+			if random.random() <= self.p:
+				chromosome[i]+=random.gauss(0,self.k)
+
+		return chromosome
 
 

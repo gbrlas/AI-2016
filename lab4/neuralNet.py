@@ -1,5 +1,5 @@
 from networkLayers import *
-from transferFunctions import * 
+from transferFunctions import *
 
 class NeuralNetwork(object):
 	"""
@@ -18,15 +18,15 @@ class NeuralNetwork(object):
 		"""
 		self.layers.append(layer)
 
-	def output(self, x): 
+	def output(self, x):
 		"""
-			Calculate the output for a single input instance x (one row from 
+			Calculate the output for a single input instance x (one row from
 			the training or test set)
 		"""
 
-		# For each layer - calcuate the output of that layer and use it	
-		# as input to the following layer. The method should return the 
-		# output of the last layer. The input to the first layer is the 
+		# For each layer - calcuate the output of that layer and use it
+		# as input to the following layer. The method should return the
+		# output of the last layer. The input to the first layer is the
 		# vector x.
 
 		###
@@ -35,11 +35,15 @@ class NeuralNetwork(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass 
+		networkOutput = x
+		for layer in self.layers:
+			networkOutput = layer.output(networkOutput)
+
+		return networkOutput
 
 	def outputs(self, X):
 		"""
-			For a given vector of input instances X (the training or test set), 
+			For a given vector of input instances X (the training or test set),
 			return the vector of outputs for all the input instances.
 		"""
 
@@ -48,8 +52,12 @@ class NeuralNetwork(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
+		outputs = list()
 
-		pass 
+		for x in X:
+			outputs.append(self.output(x))
+
+		return outputs
 
 	def error(self, prediction, y):
 		"""
@@ -63,10 +71,10 @@ class NeuralNetwork(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass 
+		return ((prediction - y) ** 2)
 
 
-	def total_error(self, predictions, Y): 
+	def total_error(self, predictions, Y):
 		"""
 			Calculates the total error for ALL the examples in the train/test set.
 		"""
@@ -79,7 +87,14 @@ class NeuralNetwork(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass 
+		total = 0.0
+
+		for prediction,y in zip(predictions,Y):
+			total+=self.error(prediction,y)
+
+		total = float(total / len(predictions))
+
+		return total
 
 	def forwardStep(self, X, Y):
 		"""
@@ -90,15 +105,22 @@ class NeuralNetwork(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		pass
+
+		calculatedValues = self.outputs(X)
+		error = self.total_error(calculatedValues,Y)
+
+		return error
+
 
 	def size(self):
 		"""
 			Return the total number of weights in the network
 		"""
-		totalSize = 0 
-		for layer in self.layers: 
+		totalSize = 0
+
+		for layer in self.layers:
 			totalSize += layer.size()
+
 		return totalSize
 
 	def getWeightsFlat(self):
@@ -106,8 +128,10 @@ class NeuralNetwork(object):
 			Return a 1-d representation of all the weights in the network
 		"""
 		flatWeights = np.array([])
-		for layer in self.layers: 
+
+		for layer in self.layers:
 			flatWeights = np.append(flatWeights, layer.getWeightsFlat())
+
 		return flatWeights
 
 	def setWeights(self, flat_vector):
