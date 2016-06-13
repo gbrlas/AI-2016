@@ -167,8 +167,8 @@ class Neuron(NetworkLayer):
 class FunctionLayer(NetworkLayer):
 	"""
 		A generalization of the sigmoid layer for any provided transfer
-		function - the outpu of the layer is the function applied to 
-		each element in the input. 
+		function - the output of the layer is the function applied to
+		each element in the input.
 	"""
 
 	i = 1 # static counter
@@ -183,11 +183,10 @@ class FunctionLayer(NetworkLayer):
 
 		self.f = f
 
-	def output(self, X): 
+	def output(self, X):
 		"""
-			Appies the given function (Note: the function has to be vectorized for 
+			Appies the given function (Note: the function has to be vectorized for
 			the layer to work in the general case)
 		"""
 		out = self.f(X)
-		return out 
-
+		return out

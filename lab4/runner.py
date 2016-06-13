@@ -65,12 +65,12 @@ if __name__ == '__main__':
 	#       YOUR CODE HERE      #
 	#############################
 
-	n = 6
+	n = 5
 
-	NN.addLayer(LinearLayer(1, n))
+	NN.addLayer(LinearLayer(input_size, n))
 	NN.addLayer(LinearLayer(n, n))
 	NN.addLayer(FunctionLayer(tanh))
-	NN.addLayer(LinearLayer(n, 1))
+	NN.addLayer(LinearLayer(n, output_size))
 
 
 	####################
@@ -106,12 +106,23 @@ if __name__ == '__main__':
 	#    MODIFY CODE AT WILL FROM HERE    #
 	#######################################
 
+	#najbolji za sinusoidu
+	"""
+	elitism = 2 # Keep this many of top units in each iteration
+	populationSize = 25 # The number of chromosomes
+	mutationProbability  = .1 # Probability of mutation
+	mutationScale = 0.25 # Standard deviation of the gaussian noise
+	numIterations = 5000 # Number of iterations to run the genetic algorithm for
+	errorTreshold = 1e-8 # Lower threshold for the error while optimizing
+	"""
+
+
 	elitism = 2 # Keep this many of top units in each iteration
 	populationSize = 20 # The number of chromosomes
-	mutationProbability  = .3 # Probability of mutation
-	mutationScale = 0.1 # Standard deviation of the gaussian noise
-	numIterations = 5000 # Number of iterations to run the genetic algorithm for
-	errorTreshold = 1e-6 # Lower threshold for the error while optimizing
+	mutationProbability  = .1 # Probability of mutation
+	mutationScale = 0.25 # Standard deviation of the gaussian noise
+	numIterations = 3000 # Number of iterations to run the genetic algorithm for
+	errorTreshold = 1e-8 # Lower threshold for the error while optimizing
 
 	GA = GeneticAlgorithm(NN.size(), errorClosure,
 		elitism = elitism,

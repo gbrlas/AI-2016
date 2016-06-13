@@ -36,6 +36,7 @@ class NeuralNetwork(object):
 		#       YOUR CODE HERE      #
 		#############################
 		networkOutput = x
+
 		for layer in self.layers:
 			networkOutput = layer.output(networkOutput)
 
@@ -52,12 +53,12 @@ class NeuralNetwork(object):
 		#############################
 		#       YOUR CODE HERE      #
 		#############################
-		outputs = list()
+		outputList = list()
 
 		for x in X:
-			outputs.append(self.output(x))
+			outputList.append(self.output(x))
 
-		return outputs
+		return outputList
 
 	def error(self, prediction, y):
 		"""
@@ -90,7 +91,7 @@ class NeuralNetwork(object):
 		total = 0.0
 
 		for prediction,y in zip(predictions,Y):
-			total+=self.error(prediction,y)
+			total += self.error(prediction, y)
 
 		total = float(total / len(predictions))
 

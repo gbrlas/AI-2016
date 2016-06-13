@@ -76,19 +76,17 @@ class GeneticAlgorithm(object):
 		while len(newPopulation) < self.populationSize:
 			p1, p2 = self.selectParents()
 			d1 = self.crossover(p1,p2)
-			d2 = self.crossover(p1,p2)
 
 			d1 = self.mutate(d1)
-			d2 = self.mutate(d2)
 
 			newPopulation.append((d1,self.calculateFitness(d1)))
-			newPopulation.append((d2,self.calculateFitness(d2)))
 
-		self.population = sorted(newPopulation,key = lambda t: -t[1]) #sort descending by fitness
 
-		best_weights = self.population[0][0] #since it's sorted, the best element with best fitness
+		self.population = sorted(newPopulation,key = lambda t: -t[1])
 
-		return (stop,self.i,best_weights)
+		best_weights = self.best()
+
+		return (stop, self.i, best_weights)
 
 
 	def calculateFitness(self, chromosome):
@@ -140,9 +138,9 @@ class GeneticAlgorithm(object):
 		for unit in self.population:
 			total_fitness += unit[1]
 
-		while len(parents)<2:
+		while len(parents) < 2:
 			for unit in self.population:
-				if len(parents)>=2:
+				if len(parents) >= 2:
 					break
 
 				if random.random() < unit[1] / total_fitness:
@@ -174,7 +172,7 @@ class GeneticAlgorithm(object):
 		#width of chromosome array
 		for i in range(chromosome.shape[0]) :
 			if random.random() <= self.p:
-				chromosome[i]+=random.gauss(0,self.k)
+				chromosome[i] += random.gauss(0, self.k)
 
 		return chromosome
 
