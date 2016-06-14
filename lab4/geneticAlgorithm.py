@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import math
 
 class GeneticAlgorithm(object):
 	"""
@@ -38,6 +39,9 @@ class GeneticAlgorithm(object):
 
 		# sort descending according to fitness (larger is better)
 		self.population = sorted(self.population, key=lambda t: -t[1])
+
+		random.seed(11071998)
+
 
 	def step(self):
 		"""
@@ -143,7 +147,7 @@ class GeneticAlgorithm(object):
 				if len(parents) >= 2:
 					break
 
-				if random.random() < unit[1] / total_fitness:
+				if np.random.random() < unit[1] / total_fitness:
 					parents.append(unit)
 
 		return parents[0][0],parents[1][0]
@@ -171,7 +175,7 @@ class GeneticAlgorithm(object):
 
 		#width of chromosome array
 		for i in range(chromosome.shape[0]) :
-			if random.random() <= self.p:
+			if np.random.random() <= self.p:
 				chromosome[i] += random.gauss(0, self.k)
 
 		return chromosome
